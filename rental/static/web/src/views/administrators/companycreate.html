@@ -1,0 +1,163 @@
+
+<div class="layui-fluid">
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12">
+      <div class="layui-card ">
+        <div class="layui-card-body">
+          <input type='hidden' name="csrfmiddlewaretoken" id='csrf'>
+          <form class="layui-form"  lay-filter="example">
+            <input type='hidden' name="cid" id='cid'>
+            <div class="layui-row">
+
+                <div class="layui-form-item ">
+                  <label class="layui-form-label">公司名称</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="name" id="name" autocomplete="off" class="layui-input" placeholder="公司名称" >
+                  </div>
+                </div>
+
+
+                <div class="layui-form-item" id="keybox">
+                  <label class="layui-form-label">机构代码</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="key" id="key" autocomplete="off" class="layui-input" placeholder="机构代码（提交后不可再次修改）">
+                  </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">公司官网</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="web" id="web" autocomplete="off" class="layui-input" placeholder="公司官网">
+                    </div>
+                </div>
+        
+
+                <div class="layui-form-item">
+                  <label class="layui-form-label">公司地址</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="address" id="address" autocomplete="off" class="layui-input" placeholder="公司地址">
+                  </div>
+              </div>
+                <div class="layui-form-item">
+                  <label class="layui-form-label">法定代表人</label>
+                  <div class="layui-input-block">
+                    <input type="manage" name="manage" id="manage" autocomplete="off" class="layui-input" placeholder="法定代表人">
+                  </div>
+              </div>
+
+                <div class="layui-form-item">
+                  <label class="layui-form-label">法人身份证</label>
+                  <div class="layui-input-block">
+                    <input type="idcard" name="idcard" id="idcard" autocomplete="off" class="layui-input" placeholder="法人身份证">
+                  </div>
+              </div>
+
+                <div class="layui-form-item" >
+                  <label class="layui-form-label">联系电话</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="mobilephone" id="mobilephone" lay-verify="phone" autocomplete="off" class="layui-input" placeholder="联系电话">
+                  </div>
+
+              </div>
+
+              
+
+                <div class="layui-form-item">
+                  <label class="layui-form-label">团队名称</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="teamname" id="teamname" value="" autocomplete="off" class="layui-input" placeholder="团队名称">
+                  </div>
+
+              </div>
+
+                <div class="layui-form-item">
+                  <label class="layui-form-label">团队地址</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="teamaddress" id="teamaddress" value="" autocomplete="off" class="layui-input" placeholder="团队地址">
+                  </div>
+                </div>
+
+              <div class="layui-form-item">
+                <div class="layui-input-block">
+                  <button class="layui-btn"  lay-submit id="sub" lay-filter="sub">确认提交</button>
+                </div>
+              </div>
+            </div>
+            
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  layui.use(['form', 'admin'], () => {
+    var form = layui.form,
+      admin = layui.admin,
+      $ = layui.$;
+
+    admin.req({
+      url: '/csrf/'
+      , type: 'GET'
+      , done: function (res) {
+        $('#csrf').val(res.data.token);
+      }
+    });
+
+    // admin.req({
+    //   url: '/rbac/companydetails/'
+    //   , type: 'GET'
+    //   , done: function (res) {
+    //     let data = res.data
+    //     form.val('example', {
+    //       "name": data.name
+    //       , "key": data.key
+    //       , "address": data.address
+    //       , "manage": data.manage
+    //       , "mobilephone": data.mobilephone
+    //       , "idcard": data.idcard
+    //       , "teamname": data.teamname
+    //       , "teamaddress": data.teamaddress
+    //     })
+    //   }
+    // });
+
+    form.on('submit(sub)', function (obj) {
+      let data = obj.field
+      if(data.cid == ''){
+          admin.req({
+              url: '/super/companycreate/',
+              type: 'POST',
+              data: data,
+              done: (res) => {
+                  layer.msg(res.msg, {
+                      offset: '15px'
+                      , icon: 1
+                      , time: 1000
+                  }, function () {
+                      layui.index.render();
+                  });
+              }
+          })
+      }else{
+          admin.req({
+              url: '/super/companyupdate/' + data.cid +'/',
+              type: 'POST',
+              data: data,
+              done: (res) => {
+                  layer.msg(res.msg, {
+                      offset: '15px'
+                      , icon: 1
+                      , time: 1000
+                  }, function () {
+                      layui.index.render();
+                  });
+              }
+          })
+      }
+      return false
+    });
+
+  });
+</script>

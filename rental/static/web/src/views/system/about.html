@@ -1,0 +1,42 @@
+<div class="layui-card-header">操作记录</div>
+<div class="layui-card-body">
+    <ul class="layui-timeline" id='logten'>
+        
+    </ul>
+</div>
+
+<div class="layui-card-header">系统版权</div>
+<div class="layui-card-body layui-text layadmin-about">
+  
+  <blockquote class="layui-elem-quote" style="border: none;">
+       本系统为rickon授权产品。
+  </blockquote>
+  <p>© 2019 <a>rickon</a> 版权所有</p>
+</div>
+
+<script>
+    layui.use(['admin'], function(){
+        var $ = layui.$
+        ,admin = layui.admin
+        admin.req({
+            type:'GET'
+            ,url:'/log/loglist/'
+            ,dataType: "json"
+            ,success:function(data){
+                for(var index in data.data){
+                    log_info = data.data[index];
+                    var info_str = log_info.create_time+log_info.type+log_info.action;
+                    ExceptionDivHtml=`
+                    <li class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis"></i>
+                        <div class="layui-timeline-content layui-text">
+                        <div class="layui-timeline-title">`+info_str+`</div>
+                        </div>
+                    </li>
+                    `;
+                    $("#logten").append(ExceptionDivHtml);
+                }
+            }
+        });
+    })
+</script>

@@ -1,0 +1,40 @@
+<form class="layui-form" id="auditform" lay-filter="auditform">
+    <input type="text" name="id" class="layui-input layui-hide">
+    <div class="layui-form-item">
+        <label class="layui-form-label">审核结果</label>
+        <div class="layui-input-block">
+            <input type="radio" name="action" value="release" title="发布">
+            <input type="radio" name="action" value="sendback" title="退回">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="yes">确定</button>
+        </div>
+    </div>
+</form>
+<script>
+    layui.use(['form', 'admin'], () => {
+        var form = layui.form,
+            admin = layui.admin;
+        form.render();
+
+        form.on('submit(yes)', function (obj) {
+            let data = obj.field
+            admin.req({
+                url: '/notice/noticeaudit/' + data.id + '/' + data.action + '/',
+                type: 'GET',
+                done: (res) => {
+                    layer.msg(res.msg, {
+                        offset: '15px'
+                        , icon: 1
+                        , time: 1000
+                    }, function () {
+                        layui.index.render();
+                    });
+                }
+            })
+            return false
+        });
+    });
+</script>

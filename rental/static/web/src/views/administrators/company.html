@@ -1,0 +1,221 @@
+<title>用户管理 - 企业列表</title>
+
+<div class="layui-card layadmin-header">
+  <div class="layui-breadcrumb" lay-filter="breadcrumb">
+    <a href='#'><cite>主页</cite></a>
+    <a><cite>用户管理</cite></a>
+    <a><cite>企业列表</cite></a>
+  </div>
+</div>
+
+<div class="layui-fluid">
+  <div class="layui-row layui-col-space15">
+
+    <style>
+      .a-upload input {
+        position: absolute;
+        font-size: 100px;
+        right: 200;
+        top: 0;
+        opacity: 0;
+        filter: alpha(opacity=0);
+        cursor: pointer
+      }
+    </style>
+    <!-- 查询 -->
+    <div class="layui-col-md12">
+      <div class="layui-card">
+        <div class="layui-card-body layui-form layui-row layui-col-space10" id="projcet-query"
+          lay-filter="projcet-query">
+          <div class="layui-col-md4">
+            <label class="layui-form-label">模糊查询</label>
+            <div class="layui-input-block">
+              <input type="text" name="condition" placeholder="" autocomplete="off" class="layui-input">
+            </div>
+          </div>
+          <div class="layui-col-md2 layui-col-md-offset6">
+            <div class="layui-input-block">
+              <button class="layui-btn" lay-submit lay-filter="query">查询</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 表格 -->
+    <div class="layui-col-md12">
+      <div class="layui-card">
+        <div class="layui-card-header">企业列表</div>
+        <div class="layui-card-body">
+          <button class="layui-btn layui-btn-sm" id="add">添加企业</button>
+          <div class="layui-btn-group layui-col-lg-offset10">
+            <button class="layui-btn layui-btn-sm" id="export">获取模板</button>
+            <button class="layui-btn layui-btn-sm a-upload" id="upload">
+              <form enctype="multipart/form-data" id="file">
+                <input type="file" name="file" id='inputfile'>批量导入
+              </form>
+            </button>
+          </div>
+          <table class="layui-table" id="list" lay-filter="list"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/html" id="bar">
+  <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="edit">修改</a>
+  <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="del">删除</a>
+</script>
+
+<script>
+  layui.use(['admin', 'table', 'form', 'uncode', 'upload'], function () {
+    var table = layui.table,
+      form = layui.form,
+      $ = layui.$,
+      admin = layui.admin,
+      uncode = layui.uncode
+    upload = layui.upload;
+
+
+    form.render();
+
+    admin.req({
+      url: '/csrf/' //实际使用请改成服务端真实接口
+      , type: 'GET'
+      , done: function (res) {
+        $('#csrf').val(res.data.token);
+      }
+    });
+
+    //表格初始化
+    table.render({
+      elem: '#list'
+      , url: '/super/companylist/'
+      , headers: { [layui.setter.request.tokenName]: 'JWT ' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName] }
+      , title: '企业列表'
+      , cols: [[
+        { field: 'name', title: '公司名称', align: 'center', event: 'info', unresize: true }
+        , { field: 'key', title: '企业纳税标识', align: 'center', unresize: true }
+        , { field: 'web', title: '公司官网', align: 'center', unresize: true }
+        // , { field: 'address', title: '公司地址', align: 'center', unresize: true }
+        , { field: 'manage', title: '法人名称', align: 'center', unresize: true }
+        , { field: 'mobilephone', title: '联系电话', align: 'center', unresize: true }
+        , { field: 'user', title: '用户', align: 'center', unresize: true }
+        , { field: 'id', title: 'ID', hide: true, unresize: true }
+        , { fixed: 'right', title: '操作', toolbar: '#bar', align: 'center', unresize: true }
+      ]]
+      , page: true
+    });
+
+
+    $('#add').click(() => {
+      admin.popup({
+        title: '添加企业'
+        , area: ['600px', '720px']
+        , fixed: true
+        , maxmin: true
+        , success: function (layero, index) {
+          //将 views 目录下的某视图文件内容渲染给该面板
+          layui.view(this.id).render('administrators/companycreate').done(function () {
+
+          });
+        }
+        , end: function () {
+          table.reload('list');
+        }
+      });
+    })
+
+    $(".a-upload").on("change", "input[type='file']", function () {
+      if ($('#inputfile').val() != '') {
+        var form = document.getElementById('file');
+        var fd = new FormData(form);
+        admin.req({
+          url: '/super/csv_upload_company/',
+          type: 'POST',
+          data: fd,
+          processData: false,
+          contentType: false,
+          done: (res) => {
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            });
+            table.reload('list')
+          }
+        })
+      }
+    })
+
+    $('#export').click(() => {
+      window.open('/super/csv_get_example/');
+    })
+
+    //监听行工具事件
+    table.on('tool(list)', function (obj) {
+      var data = obj.data;
+      if (obj.event === 'edit') {
+        admin.popup({
+          title: '修改企业信息'
+          , area: ['600px', '720px']
+          , fixed: true
+          , maxmin: true
+          , success: function (layero, index) {
+            //将 views 目录下的某视图文件内容渲染给该面板
+            layui.view(this.id).render('administrators/companycreate').done(function () {
+              $("#cid").val(data.id);
+              $("#name").val(uncode(data.name));
+              $("#key").val(uncode(data.key));
+              $("#keybox").addClass('layui-hide');
+              $("#web").val(uncode(data.web));
+              $("#address").val(uncode(data.address));
+              $("#manage").val(uncode(data.manage));
+              $("#mobilephone").val(uncode(data.mobilephone));
+              $("#idcard").val(uncode(data.idcard));
+              $("#teamname").val(uncode(data.teamname));
+              $("#teamaddress").val(uncode(data.teamaddress));
+            });
+          }
+          , end: function () {
+            table.reload('list');
+          }
+        });
+      } else if (obj.event == 'del') {
+        layer.confirm('确定删除公司信息', function (index) {
+          admin.req({
+            url: '/super/companydelete/' + data.id + "/" //实际使用请改成服务端真实接口
+            , type: 'GET'
+            , done: function (res) {
+              //成功的提示与跳转
+              layer.msg(res.msg, {
+                offset: '15px'
+                , icon: 1
+                , time: 1000
+              }, function () {
+                layui.index.render();
+              });
+            }
+          });
+          obj.del();
+          layer.close(index);
+        });
+      }
+    });
+
+
+    //查询并重载表格
+    form.on('submit(query)', (d) => {
+      table.reload('list', {
+        page: {
+          curr: 1 //重新从第 1 页开始
+        }
+        , where: {
+          key: d.field.condition
+        }
+      });
+    })
+
+  });
+</script>

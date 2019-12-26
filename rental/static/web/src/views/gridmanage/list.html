@@ -1,0 +1,138 @@
+<title>商品管理 - 收藏列表</title>
+
+<div class="layui-card layadmin-header">
+  <div class="layui-breadcrumb" lay-filter="breadcrumb">
+    <a href='#'><cite>主页</cite></a>
+    <a><cite>商品管理</cite></a>
+    <a><cite>收藏列表</cite></a>
+  </div>
+</div>
+
+<div class="layui-fluid">
+  <div class="layui-row layui-col-space15">
+
+    <!-- 图 -->
+    <!-- <div class="layui-col-md12">
+        <div class="layui-card">
+            <div class="layui-card-body" style="height: 300px;">
+              <div id="chart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div> -->
+    
+
+    <!-- 查询 -->
+    <!-- <div class="layui-col-md12">
+      <div class="layui-card">
+        <div class="layui-card-body layui-form layui-row layui-col-space10" id="projcet-query" lay-filter="projcet-query">
+          <div class="layui-col-md4">
+            <label class="layui-form-label">模糊查询</label>
+            <div class="layui-input-block">
+              <input type="text" name="condition" placeholder="" autocomplete="off" class="layui-input">
+            </div>
+          </div>
+          <div class="layui-col-md2 layui-col-md-offset6">
+            <div class="layui-input-block">
+              <button class="layui-btn" lay-submit lay-filter="query">查询</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- 表格 -->
+    <div class="layui-col-md12">
+      <div class="layui-card">
+        <!--<div class="layui-card-header">收藏列表</div> -->
+        <div class="layui-card-body">
+          <table class="layui-table" id="list" lay-filter="list"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/html" id="jdlink">
+    <a href="https://item.jd.com/{{ d.sku }}.html" class="layui-table-link" target="view_window">{{ d.name }}</a>
+</script>
+<script type="text/html" id="bar">
+  <div class="layui-btn-group">
+    <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
+  </div>
+</script>
+<script>
+  layui.use(['admin', 'table', 'form','uncode'], function () {
+    var table = layui.table,
+      form = layui.form,
+      $ = layui.$,
+      admin = layui.admin,
+      echarts = layui.echarts,
+      dropdown = layui.dropdown,
+      uncode = layui.uncode;
+
+    form.render();
+
+    admin.req({
+      url: '/csrf/' //实际使用请改成服务端真实接口
+      , type: 'GET'
+      , done: function (res) {
+        $('#csrf').val(res.data.token);
+      }
+    });
+
+    //表格初始化
+    table.render({
+      elem: '#list'
+      , url: '/weixin/test/'
+      , headers: { [layui.setter.request.tokenName]: 'JWT ' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName] }
+      , defaultToolbar: ['print', 'exports']
+      , title: '文章列表'
+      , cols: [[
+            { field: 'id', title: 'ID', hide: true, unresize: true }
+            , { field: 'name', title: '商品', align: 'left', unresize: true,templet:'#jdlink',width:'50%' }
+            , { field: 'type1', title: '类别1', align: 'center', unresize: true}
+            , { field: 'type2', title: '类别2', align: 'center', unresize: true}
+            , { field: 'price', title: '价格',sort:true, align: 'center', unresize: true}
+            , { fixed: 'right', title: '操作', toolbar: '#bar', align: 'center', unresize: true }
+      ]]
+      , page: true
+    });
+
+    //监听行工具事件
+    table.on('tool(list)', function (obj) {
+      var data = obj.data;
+      if(obj.event =='del'){
+        layer.confirm('确定删除收藏', function (index) {
+          admin.req({
+            url: '/goodsmanage/collectdelete/' + data.id + '/',
+            type: 'GET',
+            done: (res) => {
+              layer.msg(res.msg, {
+                offset: '15px'
+                , icon: 1
+                , time: 1000
+              }, function () {
+                layui.index.render();
+              });
+            }
+          })
+          obj.del();
+          layer.close(index);
+        });
+      }
+    });
+
+
+    //查询并重载表格
+    form.on('submit(query)', (d) => {
+      table.reload('list', {
+        page: {
+          curr: 1 //重新从第 1 页开始
+        }
+        , where: {
+          key: d.field.condition
+        }
+      });
+    })
+  });
+</script>

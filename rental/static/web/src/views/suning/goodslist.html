@@ -1,0 +1,153 @@
+<title>商品管理 - 商品列表</title>
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a href='#'><cite>主页</cite></a>
+        <a><cite>商品管理</cite></a>
+        <a><cite>商品详情</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space10">
+
+        <!-- 左树 -->
+        <div class="layui-col-md3">
+            <div class="layui-card">
+                <div class="layui-card-body mini-bar" id="" style="height: 600px">
+                        <ul id="dataTree3" class="dtree" data-id="0"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右表 -->
+        <div class="layui-col-md9">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <div class="layui-form toolbar">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label w-auto">搜索：</label>
+                                <div class="layui-input-inline mr0">
+                                    <input id="edtSearch" class="layui-input" type="text" placeholder="输入关键字" />
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <button class="layui-btn icon-btn" id="btnSearch">
+                                    <i class="layui-icon">&#xe615;</i>搜索
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <table class="layui-table" id="item-list" lay-filter="item-list"></table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="bar">
+    <button class="layui-btn layui-btn-xs layui-btn" lay-event="collect">收藏</button>
+</script>
+
+<script type="text/html" id="jdlink">
+    <a href="http://product.suning.com/0000000000/{{ d.sku }}.html" class="layui-table-link" target="view_window">{{ d.name }}</a>
+</script>
+
+<script>
+    layui.use(['admin', 'table', 'dtree', 'aliossUploader', 'upload'], () => {
+        var $ = layui.$,
+            admin = layui.admin,
+            table = layui.table,
+            router = layui.router(),
+            dtree = layui.dtree,
+            aliossUploader = layui.aliossUploader;
+        var fid;
+
+        admin.req({
+            url: '/csrf/' //实际使用请改成服务端真实接口
+            , type: 'GET'
+            , done: function (res) {
+                $('#csrf').val(res.data.token);
+            }
+        });
+
+
+        table.render({
+            elem: '#item-list'
+            , url: '/suning/goodslist/0/'
+            , headers: { [layui.setter.request.tokenName]: 'JWT ' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName] }
+            , defaultToolbar: ['print', 'exports']
+            , title: '评测列表'
+            , cols: [[
+                { field: 'id', title: 'ID', hide: true, unresize: true }
+                , { field: 'title', title: '商品', align: 'left', unresize: true,templet:'#jdlink',width:'50%' }
+                , { field: 'type1', title: '类别1', align: 'center', unresize: true}
+                , { field: 'type2', title: '类别2', align: 'center', unresize: true}
+                , { field: 'type3', title: '类别3', align: 'center', unresize: true}
+                , { field: 'price', title: '价格',sort:true, align: 'center', unresize: true}
+                , { fixed: 'right', title: '操作', toolbar: '#bar', align: 'center', unresize: true }
+            ]]
+            , page: true
+        });
+
+        // 树形渲染
+        dtree.render({
+            elem: '#dataTree3',
+            url: '/suning/typelist/',
+            dataStyle: "layuiStyle",
+            // url:'json/tree.json',
+            dataFormat: "list", 
+            response: { message: "msg", statusCode: 200 },  
+            headers: { [layui.setter.request.tokenName]: 'JWT ' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName] },
+            method: 'GET',
+            type: 'all',
+            initLevel: '1',
+            icon: '4',
+            dot: false,
+            method: 'GET',
+        });
+
+        // 树形点击事件
+        dtree.on('node("dataTree3")', function (obj) {
+            var data = obj.param;
+            table.reload('item-list',{
+                url: '/suning/goodslist/' + data.nodeId + '/',
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            })
+
+        });
+
+        $('#btnSearch').click(() => {
+            let data = $('#edtSearch').val();
+            table.reload('item-list', {
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                , where: {
+                    key: data
+                }
+            });
+        })
+
+        table.on('tool(item-list)', function (obj) {
+            var data = obj.data;
+            if( obj.event === 'collect'){
+                admin.req({
+                    url: '/suning/collect/' + data.id + '/',
+                    type: 'GET',
+                    done: (res) => {
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            , icon: 1
+                            , time: 1000
+                        }, function () { });
+                    }
+                });
+            }
+        });
+    });
+</script>

@@ -1,0 +1,145 @@
+<div class="layui-card-body" style="padding: 15px;" id='formedit'>
+	<form class="layui-form" action="" lay-filter="component-form-group">
+	<input type='hidden' name="csrfmiddlewaretoken" id='csrf'>
+	<div class="layui-form-item">
+      <label class="layui-form-label">用户名</label>
+      <div class="layui-input-block">
+        <input type="text" name="username" lay-verify="required" autocomplete="off" placeholder="请输入用户名，用户登陆使用" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">用户邮箱</label>
+      <div class="layui-input-block">
+        <input type="email" name="email" lay-verify="required" autocomplete="off" placeholder="请输入用户邮箱，用于注册通知" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">联系电话</label>
+      <div class="layui-input-block">
+        <input type="tel" name="mobilephone" lay-verify="required|phone" autocomplete="off" placeholder="请输入用户手机号" class="layui-input">
+      </div>
+    </div>
+    <input type='hidden' name="roles"  id='roles'>
+    <div class="layui-form-item">
+		<label class="layui-form-label">所属角色</label>
+		<div class="layui-input-block">
+		  <input name="roles_title" id="user_roles_title" lay-verify="required" autocomplete="off" placeholder="所属角色" class="layui-input">
+		</div>
+	</div>
+	<div class="layui-form-item">
+      <label class="layui-form-label">机构代码</label>
+      <div class="layui-input-block">
+        <input type="text" name="companykey" lay-verify="required" autocomplete="off" placeholder="企业纳税识别号" class="layui-input">
+      </div>
+    </div>
+    <!-- <div class="layui-form-item">
+      <label class="layui-form-label">所属部门</label>
+      <div class="layui-input-block">
+        <input name="department"  id="user_department" lay-filter="tree" class="layui-input">
+      </div>
+    </div> -->
+    <div class="layui-form-item">
+      <label class="layui-form-label">所属区域</label>
+      <div class="layui-input-block">
+        <input name="area"  id="user_area" lay-filter="tree" class="layui-input">
+      </div>
+    </div>
+	<div class="layui-form-item">
+	  <div class="layui-input-block">
+	      <button class="layui-btn" lay-submit="" lay-filter="component-form-demo1">立即提交</button>
+	      <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+	  </div>
+	</div>
+	</form>
+</div>
+
+
+<script>
+layui.extend({
+	citypicker: '/city-picker/city-picker'
+}).use(['admin','form','laydate','treeSelect','tableSelect'], function(){
+	  var $ = layui.$
+	  ,layer = layui.layer
+	  ,admin = layui.admin
+	  ,form = layui.form
+	  ,tableSelect = layui.tableSelect
+	  ,treeSelect = layui.treeSelect;
+	  
+	  form.render();
+	  
+	  admin.req({
+	        url: '/csrf/' //实际使用请改成服务端真实接口
+	        ,type: 'GET'
+	        ,done: function(res){
+	        	$('#csrf').val(res.data.token);
+	        }
+	      });
+	  
+	  treeSelect.render({
+	       elem: '#user_area',
+	       data: '/super/select/area/',
+	       type: 'get',
+	       placeholder: '用户所属区域',
+	       search: true,
+	       click: function(d){
+	           $("#user_area").val(d['current']['id']);
+	       },
+	       success: function (d) {}
+	   });
+	  tableSelect.render({
+			elem: '#user_roles_title',
+			searchKey: 'key',
+			checkedKey: 'id',
+			searchPlaceholder: '邮箱地址',
+			table: {
+				url: '/super/roleslist/'
+				,headers:{[layui.setter.request.tokenName]: 'JWT '+layui.data(layui.setter.tableName)[layui.setter.request.tokenName]}
+				,cols: [[
+					{checkbox: true, fixed: true}
+				  ,{field:'name', title: '角色名称'}
+			      ,{field:'description', title: '角色描述'}
+				]]
+				,limit:5
+			},
+			done: function (elem, data) {
+				var NEWJSON = [];
+				var id_list =[];
+				layui.each(data.data, function (index, item) {
+					NEWJSON.push(item.name);
+					id_list.push(item.id);
+				});
+				elem.val(NEWJSON.join(","));
+				$('#roles').val(id_list.join(","));
+			}
+		});
+	  
+	  form.on('submit(component-form-demo1)', function(obj){
+			layer.load(1, {
+        shade: [0.5, '#eee']
+      });
+		admin.req({
+		    url: '/super/usercreate/' //实际使用请改成服务端真实接口
+				,type: 'POST'
+				,complete:()=>{
+					layer.closeAll('loading');
+				}
+		    ,data: obj.field
+		    /* ,beforeSend: function(){
+	            loadindex=layer.load(1);
+	          } */
+		    ,done: function(res){
+		      //成功的提示与跳转
+		      //layer.close(loadindex);
+		      layer.msg(res.msg, {
+		        offset: '15px'
+		        ,icon: 1
+		        ,time: 1000
+		      }, function(){
+		    	  layui.index.render();
+		      });
+		    }
+		  });
+		return false;
+	  });
+});
+</script>

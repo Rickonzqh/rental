@@ -1,0 +1,141 @@
+
+<script type="text/html" template>
+  <link rel="stylesheet" href="{{ layui.setter.base }}style/login.css?v={{ layui.admin.v }}-1" media="all">
+</script>
+
+
+<div class="layadmin-user-login layadmin-user-display-show" id="LAY-user-login" style="display: none; background-image: url('../src/style/res/bg_login2.svg');background-position: center 110px;
+background-repeat: no-repeat;
+background-size: 100%;
+background-color: #f0f2f5;">
+  <div class="layadmin-user-login-main layui-card" style="border-radius:30px;margin-top:2%">
+    <div class="layadmin-user-login-box layadmin-user-login-header layui-card-body">
+      <h2>信息安全评测中心</h2>
+      <script type="text/html" template>
+          <p>{{ layui.setter.company }}安全评测平台</p>
+	  </script>
+    <div class="layadmin-user-login-box layadmin-user-login-body layui-form">
+      <input type='hidden' name="csrfmiddlewaretoken" id='csrf'>
+      <div class="layui-form-item">
+        <label class="layadmin-user-login-icon layui-icon layui-icon-username" for="LAY-user-login-cellphone"></label>
+        <input type="email" name="email" id="LAY-user-login-cellphone" lay-verify="email" placeholder="请输邮箱账号" class="layui-input">
+      </div>
+      <div class="layui-form-item">
+        <div class="layui-row">
+           <label class="layadmin-user-login-icon layui-icon layui-icon-vercode" for="LAY-user-login-vercode"></label>
+           <input type="text" name="checkcode" id="LAY-user-login-vercode" lay-verify="required" placeholder="校验码" class="layui-input">
+        </div>
+      </div>
+      <div class="layui-form-item">
+        <label class="layadmin-user-login-icon layui-icon layui-icon-password" for="LAY-user-login-password"></label>
+        <input type="password" name="password" id="LAY-user-login-password" lay-verify="pass" placeholder="密码" class="layui-input">
+      </div>
+      <div class="layui-form-item">
+        <label class="layadmin-user-login-icon layui-icon layui-icon-password" for="LAY-user-login-repass"></label>
+        <input type="password" name="repass" id="LAY-user-login-repass" lay-verify="required" placeholder="确认密码" class="layui-input">
+      </div>
+      <div class="layui-form-item">
+        <div class="layui-row">
+          <div class="layui-col-xs7">
+            <label class="layadmin-user-login-icon layui-icon layui-icon-vercode" for="LAY-user-login-vercode"></label>
+            <input type="text" name="vercode" id="LAY-user-login-vercode" lay-verify="required" placeholder="图形验证码" class="layui-input">
+          </div>
+          <div class="layui-col-xs5">
+            <div style="margin-left: 10px;">
+                <img src="" class="layadmin-user-login-codeimg" id="LAY-user-get-vercode">
+                <input type="hidden" name="captchakey" id="LAY-user-captcha-key" value="" class="layui-input">
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- <div class="layui-form-item">
+        <label class="layadmin-user-login-icon layui-icon layui-icon-username" for="LAY-user-login-nickname"></label>
+        <input type="text" name="username" id="LAY-user-login-nickname" lay-verify="nickname" placeholder="昵称,用于登陆" class="layui-input">
+      </div> -->
+      <div class="layui-form-item">
+        <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="LAY-user-reg-submit">提  交</button>
+      </div>
+    </div>
+   </div>
+
+  </div>
+</div>
+
+<script>
+layui.use(['admin', 'form', 'user'], function(){
+  var $ = layui.$
+  ,setter = layui.setter
+  ,admin = layui.admin
+  ,form = layui.form
+  ,router = layui.router();
+
+  form.render();
+  admin.req({
+      url: '/csrf/' //实际使用请改成服务端真实接口
+      ,type: 'GET'
+      ,done: function(res){
+      	$('#csrf').val(res.data.token);
+      }
+    });
+  
+/*   //发送短信验证码
+  admin.sendAuthCode({
+    elem: '#LAY-user-reg-getsmscode'
+    ,elemPhone: '#LAY-user-login-cellphone'
+    ,elemVercode: '#LAY-user-login-vercode'
+    ,ajax: {
+      url: './json/user/sms.js' //实际使用请改成服务端真实接口
+    }
+  }); */
+
+  //提交
+  form.on('submit(LAY-user-reg-submit)', function(obj){
+    var field = obj.field;
+
+    //确认密码
+    if(field.password == ""){
+      return layer.msg('请输入验证码');
+    }
+
+    //确认密码
+    if(field.password !== field.repass){
+      return layer.msg('两次密码输入不一致');
+    }
+    
+    /* //是否同意用户协议
+    if(!field.agreement){
+      return layer.msg('你必须同意用户协议才能注册');
+    } */
+    
+    //请求接口
+    var loadindex;
+    admin.req({
+      url: '/rbac/registinit/' //实际使用请改成服务端真实接口
+      ,data: field
+      ,type: 'POST'
+   	  /* ,beforeSend: function(){
+            loadindex=layer.load(1);
+          } */
+      ,done: function(res){
+    	//layer.close(loadindex);
+        layer.msg('注册成功', {
+          offset: '15px'
+          ,icon: 1
+          ,time: 1000
+        }, function(){
+          location.hash = '/user/login'; //跳转到登入页
+        });
+      }
+    });
+    
+    return false;
+  });
+    //绑定验证码点击更新
+   $("#LAY-user-get-vercode").click(function () {
+     var captchakey = (new Date().getTime()).toString() + Math.random().toString(36).replace('.','')
+      $("#LAY-user-get-vercode").attr('src','/captcha/captcha/'+captchakey+'/')
+      $("#LAY-user-captcha-key").val(captchakey)
+   });
+   $("#LAY-user-get-vercode").trigger("click")
+});
+</script>

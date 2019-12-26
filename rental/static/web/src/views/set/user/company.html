@@ -1,0 +1,165 @@
+<title>设置企业信息</title>
+
+<div class="layui-card layadmin-header">
+  <div class="layui-breadcrumb" lay-filter="breadcrumb">
+    <a lay-href="">主页</a>
+    <a><cite>设置</cite></a>
+    <a><cite>企业信息</cite></a>
+  </div>
+</div>
+
+<div class="layui-fluid">
+  <div class="layui-row layui-col-space15">
+    <div class="layui-col-md12">
+      <div class="layui-card ">
+        <div class="layui-card-header">企业信息</div>
+        <div class="layui-card-body">
+          <input type='hidden' name="csrfmiddlewaretoken" id='csrf'>
+          <form class="layui-form"  lay-filter="example">
+            <div class="layui-row">
+              <div class="layui-col-md5">
+                <div class="layui-form-item ">
+                  <label class="layui-form-label">公司名称</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="name" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">机构代码</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="key" autocomplete="off" class="layui-input" readonly id="key">
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">公司地址</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="address" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">公司官网</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="web" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">法定代表人</label>
+                  <div class="layui-input-block">
+                    <input type="manage" name="manage" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">法人身份证</label>
+                  <div class="layui-input-block">
+                    <input type="idcard" name="idcard" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md10">
+                <div class="layui-form-item layui-col-md6">
+                  <label class="layui-form-label">联系电话</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="mobilephone" lay-verify="phone" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">团队名称</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="teamname" value="" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-col-md5">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">团队地址</label>
+                  <div class="layui-input-block">
+                    <input type="text" name="teamaddress" value="" autocomplete="off" class="layui-input canchange" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="layui-form-item">
+                <div class="layui-input-block">
+                  <button class="layui-btn" id="change">修改信息</button>
+                  <button class="layui-btn layui-btn-disabled" disabled lay-submit id="sub" lay-filter="sub">确认提交</button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  layui.use(['form', 'admin'], () => {
+    var form = layui.form,
+      admin = layui.admin,
+      $ = layui.$;
+
+    admin.req({
+      url: '/csrf/'
+      , type: 'GET'
+      , done: function (res) {
+        $('#csrf').val(res.data.token);
+      }
+    });
+
+    admin.req({
+      url: '/rbac/companydetails/'
+      , type: 'GET'
+      , done: function (res) {
+        let data = res.data
+        form.val('example', {
+          "name": data.name
+          , "key": data.key
+          , "address": data.address
+          , "web":data.web
+          , "manage": data.manage
+          , "mobilephone": data.mobilephone
+          , "idcard": data.idcard
+          , "teamname": data.teamname
+          , "teamaddress": data.teamaddress
+        })
+      }
+    });
+
+    form.on('submit(sub)', function (obj) {
+      let data = obj.field
+      admin.req({
+        url: '/rbac/companyupdate/',
+        type: 'POST',
+        data: data,
+        done: (res) => {
+          layer.msg(res.msg, {
+            offset: '15px'
+            , icon: 1
+            , time: 1000
+          }, function () {
+            admin.events.refresh()
+          });
+        }
+      })
+      return false
+    });
+
+    $('#change').click(()=>{
+      $('#sub').removeClass('layui-btn-disabled').removeAttr('disabled');
+      $('.canchange').removeAttr('readonly');
+      $('#change').addClass('layui-btn-disabled');
+      return false
+    });
+  });
+</script>

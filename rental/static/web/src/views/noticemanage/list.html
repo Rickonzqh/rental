@@ -1,0 +1,174 @@
+<title>通告管理 - 通告列表</title>
+
+<div class="layui-card layadmin-header">
+  <div class="layui-breadcrumb" lay-filter="breadcrumb">
+    <a href='#'><cite>主页</cite></a>
+    <a><cite>通告管理</cite></a>
+    <a><cite>通告列表</cite></a>
+  </div>
+</div>
+
+<div class="layui-fluid">
+  <div class="layui-row layui-col-space15">
+    <!-- 查询 -->
+    <div class="layui-col-md12">
+      <div class="layui-card">
+        <div class="layui-card-body layui-form layui-row layui-col-space10" id="projcet-query" lay-filter="projcet-query">
+          <div class="layui-col-md4">
+            <label class="layui-form-label">模糊查询</label>
+            <div class="layui-input-block">
+              <input type="text" name="condition" placeholder="" autocomplete="off" class="layui-input">
+            </div>
+          </div>
+          <div class="layui-col-md2 layui-col-md-offset6">
+            <div class="layui-input-block">
+              <button class="layui-btn" lay-submit lay-filter="query">查询</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 任务列表 -->
+    <div class="layui-col-md12">
+      <div class="layui-card">
+        <div class="layui-card-header">任务列表</div>
+        <div class="layui-card-body">
+          <table class="layui-table" id="list" lay-filter="list"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+      <button class="layui-btn layui-btn-sm" lay-event="add">新建通告</button>
+      <!-- <button class="layui-btn layui-btn-sm" lay-event="import">一键导入</button> -->
+    </div>
+  </script>
+
+<script type="text/html" id="bar">
+  <div class="layui-btn-group">
+    <a class="layui-btn layui-btn-xs" lay-event="audit">审计</a>
+  </div> 
+</script>
+
+<script>
+  layui.use(['admin', 'table', 'form'], function () {
+    var table = layui.table,
+      form = layui.form,
+      $ = layui.$,
+      admin = layui.admin;
+
+    form.render();
+
+    //表格初始化
+    table.render({
+      elem: '#list'
+      , url: '/notice/noticelist/'
+      , toolbar: '#toolbar'
+      , headers: { [layui.setter.request.tokenName]: 'JWT ' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName] }
+      , defaultToolbar: ['print', 'exports']
+      , title: '通告列表'
+      , cols: [[
+        { field: 'title', title: '通告标题', align: 'center', unresize: true,width:'50%'   }
+        , { field: 'time', title: '发布时间', align: 'center' , unresize: true  }
+        , { field: 'status', title: '发布状态', align: 'center' , unresize: true  }
+        , { fixed: 'right', title: '操作', toolbar: '#bar', align: 'center', unresize: true  }
+      ]]
+      , page: true
+    });
+
+    //头工具栏事件
+    table.on('toolbar(list)', function (obj) {
+      switch (obj.event) {
+        case 'add':
+          admin.popup({
+            title: '新建通告'
+            , area: ['600px', '500px']
+            , fixed: true
+            , maxmin: true
+            , success: function (layero, index) {
+              //将 views 目录下的某视图文件内容渲染给该面板
+              layui.view(this.id).render('noticemanage/noticecreate').done(function () {
+                
+              });
+            }
+            , end: function () {
+              table.reload('list');
+            }
+          });
+          break;
+      };
+    });
+
+    //监听行工具事件
+    table.on('tool(list)', function (obj) {
+      var data = obj.data;
+      if (obj.event === 'audit') {
+          admin.popup({
+              title: '审计通告'
+              , area: ['330px', '220px']
+              , fixed: true
+              , maxmin: true
+              , success: function (layero, index) {
+                  layui.view(this.id).render('noticemanage/audit').done(function () {
+                      form.val("auditform", {
+                          "id": data.id,
+                      });
+                  });
+              }
+              , end: function () {
+                  table.reload('list');
+              }
+          });
+      }else if(obj.event == 'pause'){
+        admin.req({
+          url:'/taskmanage/taskaction/' + data.id +'/pause/',
+          done:()=>{
+            table.reload('list')
+          }
+        })
+      }else if(obj.event == 'stop'){
+        admin.req({
+          url:'/taskmanage/taskaction/' + data.id +'/stop/',
+          done:()=>{
+            table.reload('list')
+          }
+        })
+      }else if(obj.event == 'resume'){
+        admin.req({
+          url:'/taskmanage/taskaction/' + data.id +'/resume/',
+          done:()=>{
+            table.reload('list')
+          }
+        })
+      }else if(obj.event == 'detial'){
+        location.hash = '/taskmanage/taskdetial/id=' + data.id;
+      }else if(obj.event == 'export'){
+        admin.req({
+          url:'/taskmanage/getreport/'+data.id+'/',
+          type:'GET',
+          done:(res)=>{
+            window.open(res.data);
+          }
+        })
+      }
+    });
+
+
+    //查询并重载表格
+    form.on('submit(query)', (d) => {
+      table.reload('list', {
+        page: {
+          curr: 1 //重新从第 1 页开始
+        }
+        , where: {
+          key: d.field.condition
+        }
+      });
+    })
+
+  });
+</script>

@@ -1,0 +1,181 @@
+<title>用户管理</title>
+
+<div class="layui-card layadmin-header">
+  <div class="layui-breadcrumb" lay-filter="breadcrumb">
+    <a lay-href="">主页</a>
+    <a><cite>用户管理</cite></a>
+    <a><cite>用户列表</cite></a>
+  </div>
+</div>
+
+
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-body">
+      <div class="layui-tab layui-tab-brief" lay-filter="component-tabs-hash">
+        <div class="layui-tab-content">
+          <div class="layui-tab-item layui-show">
+            <div class="userlistTable" style="margin-bottom: 10px;">
+              <div class="layui-inline">
+                <input class="layui-input" name="key" id="key" placeholder="用户名" autocomplete="off">
+              </div>
+              <button class="layui-btn" data-type="reload"><i class="layui-icon">&#xe615;</i></button>
+            </div>
+            <table id="userlist" lay-filter="userlist"></table>
+            <script id="userlisttoolbar" type="text/html">
+  					<div class="layui-btn-container">
+						<button class="layui-btn layui-btn-sm" lay-event="create">创建新账号</button>
+  					</div>
+				</script>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  layui.use(['admin', 'table'], function () {
+    var table = layui.table,
+      admin = layui.admin;
+
+    //方法级渲染
+    table.render({
+      elem: '#userlist'
+      , url: '/super/userlist/'
+      , headers: { [layui.setter.request.tokenName]: 'JWT ' + layui.data(layui.setter.tableName)[layui.setter.request.tokenName] }
+      , toolbar: '#userlisttoolbar'
+      , defaultToolbar: []
+      , cols: [[
+        { checkbox: true, fixed: true }
+        , { field: 'username', title: '用户名', width: 110 }
+        , { field: 'email', title: '邮箱' }
+        , { field: 'mobilephone', title: '联系电话' }
+        , { field: 'roles', title: '角色' }
+        , { field: 'parent', title: '管理人员' }
+        , { title: '高级选项', fixed: 'right', align: 'center', width: 130, toolbar: '#userlistbar' }
+      ]]
+      , page: true
+      , id: 'userlistReload'
+    });
+    //监听工具条
+    table.on('tool(userlist)', function (obj) {
+      var data = obj.data;
+      if (obj.event === 'deny') {
+        layer.confirm('确定要禁用用户吗？', {
+          btn: ['确定', '取消'] //按钮
+        }, function () {
+          admin.req({
+            url: '/super/usersction/deny/' + data.id + '/' //实际使用请改成服务端真实接口
+            , type: 'GET'
+            , done: function (res) {
+              layer.msg(res.msg, {
+                offset: '15px'
+                , icon: 1
+                , time: 1000
+              }, function () {
+                layui.index.render();
+              });
+            }
+          });
+        }, function () {
+          layer.closeAll();
+        });
+
+      } else if (obj.event === 'access') {
+        admin.req({
+          url: '/super/usersction/access/' + data.id + '/'//实际使用请改成服务端真实接口
+          , type: 'GET'
+          , done: function (res) {
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            }, function () {
+              layui.index.render();
+            });
+          }
+        });
+      }else if (obj.event === 'delete') {
+    	  layer.confirm('确定要禁用用户吗？', {
+              btn: ['确定', '取消'] //按钮
+            }, function () {
+              admin.req({
+                url: '/super/userdelete/' + data.id + '/' //实际使用请改成服务端真实接口
+                , type: 'GET'
+                , done: function (res) {
+                  layer.msg(res.msg, {
+                    offset: '15px'
+                    , icon: 1
+                    , time: 1000
+                  }, function () {
+                    layui.index.render();
+                  });
+                }
+              });
+            }, function () {
+              layer.closeAll();
+            });
+      }
+    	  
+    });
+    //头工具栏事件
+    table.on('toolbar(userlist)', function (obj) {
+      var checkStatus = table.checkStatus(obj.config.id);
+      switch (obj.event) {
+        case 'create':
+          //var data = checkStatus.data;
+          admin.popup({
+            title: '新建用户'
+            , area: ['800px', '600px']
+            , fixed: true
+            , maxmin: true
+            , success: function (layero, index) {
+              //将 views 目录下的某视图文件内容渲染给该面板
+              layui.view(this.id).render('administrators/usercreate').done(function () {
+                from.render(null, 'form');
+              });
+            }
+            , end: function () {
+              table.reload('userlist');
+            }
+          });
+          break;
+        case 'deny':
+          var data = checkStatus.data;
+          layer.alert(JSON.stringify(data));
+          break;
+      };
+    });
+
+    var $ = layui.$, active = {
+      reload: function () {
+
+        //执行重载
+        table.reload('userlistReload', {
+          page: {
+            curr: 1 //重新从第 1 页开始
+          }
+          , where: {
+            key: $('#key').val()
+          }
+        });
+      }
+    };
+
+
+    $('.userlistTable .layui-btn').on('click', function () {
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+  });
+</script>
+<script id="userlistbar" type="text/html">
+		{{# if(d.is_active=='True'){ }}
+			<a class="layui-btn layui-btn-xs" lay-event="deny">禁用</a>
+		{{# } else {}}
+			<a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="access">启用</a>
+		{{# } }}
+		<a class="layui-btn layui-btn-xs" lay-event="delete">删除</a>
+</script>

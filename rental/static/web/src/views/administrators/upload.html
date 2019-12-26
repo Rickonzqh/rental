@@ -1,0 +1,70 @@
+<style>
+
+.a-upload  input {
+    position: absolute;
+    font-size: 100px;
+    right: 0;
+    top: 0;
+    opacity: 0;
+    filter: alpha(opacity=0);
+    cursor: pointer
+}
+
+</style>
+
+<div class="layui-card-body" style="padding: 15px;" id='formedit'>
+    <form class="layui-form" action="" lay-filter="component-form-group">
+        <input type='hidden' name="csrfmiddlewaretoken" id='csrf'>
+        <a href="javascript:;" class="a-upload layui-btn">
+            <input type="file" name="" id="">点击这里上传文件
+        </a>
+        <div class="layui-form-item layui-col-xs-offset5">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit="" lay-filter="sub">立即提交</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </form>
+</div>
+    
+    
+    <script>
+        layui.use(['admin', 'form','uncode'], function () {
+            var $ = layui.$
+                , layer = layui.layer
+                , admin = layui.admin
+                , form = layui.form
+                , uncode = layui.uncode;
+    
+    
+            form.render();
+    
+            admin.req({
+                url: '/csrf/' //实际使用请改成服务端真实接口
+                , type: 'GET'
+                , done: function (res) {
+                    $('#csrf').val(res.data.token);
+                }
+            });
+            
+    
+            form.on('submit(sub)', function (obj) {
+                admin.req({
+                    url: '/taskmanage/taskcreate/' 
+                    , type: 'POST'
+                    , data: obj.field
+                    , done: function (res) {
+                        //成功的提示与跳转
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            , icon: 1
+                            , time: 1000
+                        }, function () {
+                            layui.index.render();
+                        });
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
